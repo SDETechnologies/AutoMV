@@ -5,6 +5,7 @@ from flask import Flask, request
 from flask_restful import Resource, Api, reqparse
 from flask_cors import CORS, cross_origin
 from dotenv import load_dotenv
+from automv import *
 load_dotenv()
 
 ENV_TYPE = os.environ.get('ENV_TYPE')
@@ -38,6 +39,10 @@ def generatemv():
     print('post request body: ', postData)
     threadURL = postData['thread_url']
     spotifyURL = postData['spotify_url']
+    videoList = postData['video_list']
+    uploadFile = postData['upload_file']
+    videoDownloadResponse = postData['download_response']
+
     return {
         'success': True
     }, 200

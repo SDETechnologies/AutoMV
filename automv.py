@@ -5,6 +5,10 @@ import math
 import os
 from moviepy.editor import *
 from hitfinder import *
+from dotenv import load_dotenv
+load_dotenv()
+
+DOWNLOAD_FOLDER = r"C:\Entertainment\nsfw\webms"
 
 def getVideoFiles(videoDir):
     fileList = []
@@ -125,7 +129,26 @@ def combineVideos2(videoFiles, audioFile, outputPath, bpm=130, beatsPerClip=4):
     wholeVideo = concatenate_videoclips(videoInputList).set_audio(audioClip).set_duration(cutTimes[len(cutTimes) - 2])
     wholeVideo.write_videofile(outputPath)
 
-def combineVideos3(videoFiles, audioFile, outputPath, batchSize = 200, bpm=130, beatsPerClip=4):
+startTime = 0
+
+def z_t(t):
+    referenceTime = t - startTime
+    # print('t - startTime: ', referenceTime)
+    if 0 < t - startTime < 0.1:
+        z = 2.5 * (t - startTime) + 1
+        print('zooming in. z(',t - startTime,') = ', z)
+        return  z# Zoom-in.
+    elif 0.1 <= t - startTime <= 0.2:
+        z = (-1 *  (2.5 * (t - startTime))) + 1.5
+        # z = 1
+        print('zooming in. z(',t - startTime,') = ', z)
+        return z  # Stay.
+    else: # 6 < t
+        z = 1
+        # print('staying. z(',t-startTime,') = 1')
+        return z  # Zoom-out.
+
+def combineVideos3(videoFiles, audioFile, outputPath, batchSize = 100, bpm=130, beatsPerClip=4):
     cutTimes = prepareAudio(audioFile)['onset_data']['low']
     print('len(cutTimes): ', len(cutTimes))
     # cutTimes = getCutTimesFromBPM(bpm, beatsPerClip, audioFile)
@@ -143,6 +166,8 @@ def combineVideos3(videoFiles, audioFile, outputPath, batchSize = 200, bpm=130, 
         print('startCutTime: ', startCutTime, ', endCutTime: ', endCutTime)
         i = startCutTime
         while i <= endCutTime and i >= startCutTime and i < len(cutTimes) - 1:
+            startTime = cutTimes[i]
+            print('startTime: ', startTime)
             # print('i: ', i)
             if i % 10 == 0:
                 print('batch ', j, ', cutTimeIndex: ', i)
@@ -157,8 +182,15 @@ def combineVideos3(videoFiles, audioFile, outputPath, batchSize = 200, bpm=130, 
             # print('scaleDimensions: ', scaleDimensions)
             scaleWidth = scaleDimensions['width']
             scaleHeight = scaleDimensions['height']
-            randomVideoClip = VideoFileClip(randomVideoFile,target_resolution=(scaleHeight,scaleWidth))
-            randomVideoClip = randomVideoClip.set_duration(videoDuration).set_position(("center","top"), relative=True)
+            # randomVideoClip = VideoFileClip(randomVideoFile,target_resolution=(scaleHeight,scaleWidth))
+            randomVideoClip = VideoFileClip(randomVideoFile,target_resolution=(1080,1920))
+            randomClipDuration = randomVideoClip.duration
+            randomStart = random.randint(0, round(randomClipDuration))
+            print('random clip start: ', randomStart, ', randomClipDuration: ', randomClipDuration)
+            z = lambda t : ((-t*t*2) + 2*t)
+            randomVideoClip = randomVideoClip.resize(z_t)
+            randomVideoClip = randomVideoClip.set_start(randomStart)
+            randomVideoClip = randomVideoClip.set_duration(videoDuration).set_position((0,0), relative=True)
             batchInputList.append(randomVideoClip)
             i += 1
         # print('batchInputList for batch ', str(j), ': ', batchInputList)
@@ -224,6 +256,16 @@ def combineVideos3(videoFiles, audioFile, outputPath, batchSize = 200, bpm=130, 
     # wholeVideo = concatenate_videoclips(videoInputList).set_audio(audioClip).set_duration(cutTimes[len(cutTimes) - 2])
     # wholeVideo.write_videofile(outputPath)
 
+def videoAlreadyDownloaded(videoSrc, downloadFolder):
+    videoFileName = os.path.basename(videoSrc)
+    downloadFolderFiles = os.listdir(downloadFolder)
+    for downloadFolderFile in downloadFolderFiles:
+        if '.webm' in downloadFolderFile:
+            if videoFileName == downloadFolderFile:
+                return True
+    return False
+
+
 def scaleToFull(width, height):
     if width > height:
         scale = 1920 / width
@@ -238,8 +280,27 @@ def scaleToFull(width, height):
             'height': 1080
         }
 
-def addZoom(wholeVideoFile, onsetData, zoomAmount):
-    print('')
+def addBounce(wholeVideoFile, audioFile, zoomAmount = 1.25):
+    bounceTimes = prepareAudio(audioFile)['onset_data']['low']
+    print('len(bounceTimes): ', len(bounceTimes))
+    wholeClip = VideoFileClip(wholeVideoFile)
+    wholeClipDuration = wholeClip.duration
+    print('wholeClipDuration: ', wholeClipDuration)
+    for i in range(0, len(bounceTimes)):
+        if i % 10 == 0:
+            print('current index: ', i)
+        bounceTime = bounceTimes[i]
+        if i != len(bounceTimes) - 1 and bounceTimes[i + 1] >= wholeClipDuration:
+            break
+        startTime = bounceTime
+        wholeClip = wholeClip.resize(z_t)
+    fileName = os.path.basename(wholeVideoFile)
+    outputDir = wholeVideoFile.replace(fileName,'')
+    baseFileName = fileName.split('.')[0]
+    fileType =  fileName.split('.')[1]
+    newFileName = baseFileName + '_withbounce' + '.' + fileType
+    outputPath = os.path.join(outputDir, newFileName)
+    wholeClip.write_videofile(outputPath)
 
 def blurVideo():
     print('')
@@ -267,10 +328,13 @@ def testCombine(video1, video2, outputPath):
     final.write_videofile(outputPath,fps=30)
 
 testDir = '/home/eliot/Entertainment/nsfw/webms'
+testDir = 'C:/Entertainment/nsfw/webms'
 testSongFile = '/home/eliot/Music/Downloads/Sewerslvt - Lexapro Delirium.mp3'
 testSongFile = '/home/eliot/Music/Downloads/Folamour - When U Came into My Life.mp3'
 testSongFile = '/home/eliot/Music/Downloads/Technotronic, Felly - Pump Up The Jam - Edit.mp3'
+testSongFile = "C:/Users/iampl/Music/Downloads/Record Club - Morning Dance.mp3"
 testOutputPath = '/home/eliot/Entertainment/nsfw/Edits/AutoMV/Technotronic, Felly - Pump Up The Jam - Edit2.mp4'
+testOutputPath = "C:/Entertainment/nsfw/Edits/Record Club - Morning Dance2.mp4"
 testBPM = 130
 files = getVideoFiles(testDir)
 # for file in files:
@@ -299,11 +363,17 @@ testVideo2 = {
 print(testVideoPath1, ', ', testVideoPath2)
 
 
-# testCombine(testVideo1, testVideo2, 'test_combine.mp4')
+# # testCombine(testVideo1, testVideo2, 'test_combine.mp4')
 
-# combineVideos2(files, testSongFile, testOutputPath)
+# # combineVideos2(files, testSongFile, testOutputPath)
 
-# hitData = prepareAudio(testSongFile)
-# print('hitData: ', hitData)
+# # hitData = prepareAudio(testSongFile)
+# # print('hitData: ', hitData)
 
-combineVideos3(files, testSongFile, testOutputPath)
+# # combineVideos3(files, testSongFile, testOutputPath)
+
+# # downloaded = videoAlreadyDownloaded('https://is2.4chan.org/gif/1698704730121802.webm',DOWNLOAD_FOLDER)
+# # print(downloaded)
+
+# wholeFile1 = 'C:/Entertainment/nsfw/Edits/Record Club - Morning Dance_1.mp4'
+# addBounce(wholeFile1, testSongFile)
