@@ -188,9 +188,11 @@ def combineVideos3(videoFiles, audioFile, outputPath, batchSize = 100, bpm=130, 
             randomStart = random.randint(0, round(randomClipDuration))
             print('random clip start: ', randomStart, ', randomClipDuration: ', randomClipDuration)
             z = lambda t : ((-t*t*2) + 2*t)
-            randomVideoClip = randomVideoClip.resize(z_t)
+
+            # randomVideoClip = randomVideoClip.resize(z_t) temporarily
+
             randomVideoClip = randomVideoClip.set_start(randomStart)
-            randomVideoClip = randomVideoClip.set_duration(videoDuration).set_position((0,0), relative=True)
+            randomVideoClip = randomVideoClip.set_duration(videoDuration)#.set_position((0,0), relative=True)
             batchInputList.append(randomVideoClip)
             i += 1
         # print('batchInputList for batch ', str(j), ': ', batchInputList)
@@ -229,8 +231,11 @@ def combineVideos3(videoFiles, audioFile, outputPath, batchSize = 100, bpm=130, 
         batchVideoFiles.append(batchVideoFile)
     songDuration = librosa.get_duration(filename=audioFile)
     # print('songDuration: ', songDuration)
-    wholeClip = concatenate_videoclips(batchVideoFiles).set_duration(songDuration - 2)
-    wholeClip.write_videofile(outputPath)
+    try:
+        wholeClip = concatenate_videoclips(batchVideoFiles).set_duration(songDuration - 2)
+        wholeClip.write_videofile(outputPath)
+    except IndexError:
+        print('escaping index error')
     for batchFileInfo in batchFileList:
         batchFilePath = batchFileInfo['path']
         print('removing ', batchFilePath)
@@ -328,13 +333,13 @@ def testCombine(video1, video2, outputPath):
     final.write_videofile(outputPath,fps=30)
 
 testDir = '/home/eliot/Entertainment/nsfw/webms'
-testDir = 'C:/Entertainment/nsfw/webms'
+# testDir = 'C:/Entertainment/nsfw/webms'
 testSongFile = '/home/eliot/Music/Downloads/Sewerslvt - Lexapro Delirium.mp3'
 testSongFile = '/home/eliot/Music/Downloads/Folamour - When U Came into My Life.mp3'
 testSongFile = '/home/eliot/Music/Downloads/Technotronic, Felly - Pump Up The Jam - Edit.mp3'
-testSongFile = "C:/Users/iampl/Music/Downloads/Record Club - Morning Dance.mp3"
+testSongFile = "/home/eliot/Music/Downloads/100 gecs - where’s my head at.mp3"
 testOutputPath = '/home/eliot/Entertainment/nsfw/Edits/AutoMV/Technotronic, Felly - Pump Up The Jam - Edit2.mp4'
-testOutputPath = "C:/Entertainment/nsfw/Edits/Record Club - Morning Dance2.mp4"
+testOutputPath = "/home/eliot/Entertainment/nsfw/Edits/AutoMV/100 gecs - where’s my head at.mp4"
 testBPM = 130
 files = getVideoFiles(testDir)
 # for file in files:
@@ -370,7 +375,7 @@ print(testVideoPath1, ', ', testVideoPath2)
 # # hitData = prepareAudio(testSongFile)
 # # print('hitData: ', hitData)
 
-# # combineVideos3(files, testSongFile, testOutputPath)
+combineVideos3(files, testSongFile, testOutputPath, 50)
 
 # # downloaded = videoAlreadyDownloaded('https://is2.4chan.org/gif/1698704730121802.webm',DOWNLOAD_FOLDER)
 # # print(downloaded)
