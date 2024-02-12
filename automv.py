@@ -334,14 +334,14 @@ def testCombine(video1, video2, outputPath):
 
 testDir = '/home/eliot/Entertainment/nsfw/webms'
 # testDir = 'C:/Entertainment/nsfw/webms'
-testDir = '/home/eliot/ArchServer/HDD1/Entertainment/nsfw/webms'
+testDir = '/home/eliot/ArchServer/nsfw/webms'
 testSongFile = '/home/eliot/Music/Downloads/Sewerslvt - Lexapro Delirium.mp3'
 testSongFile = '/home/eliot/Music/Downloads/Folamour - When U Came into My Life.mp3'
 testSongFile = '/home/eliot/Music/Downloads/Technotronic, Felly - Pump Up The Jam - Edit.mp3'
-testSongFile = "/home/eliot/Music/Downloads/blood pup - Want me like!.mp3"
+testSongFile = "/home/eliot/Music/Downloads/lilcar.mp3"
 testOutputPath = '/home/eliot/Entertainment/nsfw/Edits/AutoMV/Technotronic, Felly - Pump Up The Jam - Edit2.mp4'
 testOutputPath = "/home/eliot/Entertainment/nsfw/Edits/AutoMV/100 gecs - where’s my head at.mp4"
-testOutputPath = "/home/eliot/ArchServer/HDD1/Entertainment/nsfw/Edits/AutoMV/wantmelike1.mp4"
+testOutputPath = "/home/eliot/ArchServer/nsfw/Edits/AutoMV/lilcar1.mp4"
 testBPM = 130
 files = getVideoFiles(testDir)
 # for file in files:
@@ -377,7 +377,7 @@ print(testVideoPath1, ', ', testVideoPath2)
 # # hitData = prepareAudio(testSongFile)
 # # print('hitData: ', hitData)
 
-combineVideos3(files, testSongFile, testOutputPath, 50)
+combineVideos3(files, testSongFile, testOutputPath, 10)
 
 # # downloaded = videoAlreadyDownloaded('https://is2.4chan.org/gif/1698704730121802.webm',DOWNLOAD_FOLDER)
 # # print(downloaded)
